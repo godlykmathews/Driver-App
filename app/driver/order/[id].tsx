@@ -39,6 +39,7 @@ export default function DeliveryDetailScreen() {
     if (!hasLoadedOnce || delivery?.first_invoice_id?.toString() !== id) {
       loadDeliveryDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadDeliveryDetails = async () => {
@@ -66,20 +67,32 @@ export default function DeliveryDetailScreen() {
 
       // If not in cache, fall back to API call (only if really necessary)
       console.log("⚠️ Delivery not in cache, fetching from API...");
-      const groupedInvoices = await apiService.getInvoicesGrouped();
 
-      // Find delivery by first_invoice_id or by customer_visit_group
-      const foundDelivery = groupedInvoices.find(
-        (group) =>
-          group.first_invoice_id?.toString() === id ||
-          group.customer_visit_group === id ||
-          group.invoice_numbers.includes(id)
-      );
+      // If id looks like a customer_visit_group (contains "-"), fetch it directly
+      let foundDelivery: GroupedInvoice | undefined;
+      if (id.includes("-")) {
+        try {
+          foundDelivery = await apiService.getDeliveryDetails(id);
+        } catch {
+          // Fall through to broad search below
+        }
+      }
+
+      if (!foundDelivery) {
+        const groupedInvoices = await apiService.getInvoicesGrouped();
+        foundDelivery = groupedInvoices.find(
+          (group) =>
+            group.first_invoice_id?.toString() === id ||
+            group.customer_visit_group === id ||
+            group.invoice_numbers.includes(id),
+        );
+        if (groupedInvoices.length > 0) {
+          deliveryDataService.setCachedGroupedInvoices(groupedInvoices);
+        }
+      }
 
       if (foundDelivery) {
         setDelivery(foundDelivery);
-        // Update the cache with fresh data
-        deliveryDataService.setCachedGroupedInvoices(groupedInvoices);
         setHasLoadedOnce(true);
       } else {
         setError("Delivery not found");
@@ -87,34 +100,10 @@ export default function DeliveryDetailScreen() {
     } catch (err) {
       console.error("Error loading delivery details:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load delivery details"
+        err instanceof Error ? err.message : "Failed to load delivery details",
       );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStatusUpdate = async (
-    newStatus: "pending" | "delivered" | "failed"
-  ) => {
-    if (!delivery) return;
-
-    try {
-      // Update status via API (you'll need to implement this endpoint)
-      await apiService.updateDeliveryStatus(
-        delivery.customer_visit_group,
-        newStatus as "pending" | "delivered"
-      );
-
-      // Update local state
-      setDelivery({
-        ...delivery,
-        status: newStatus,
-      });
-
-      console.log(`Status updated to ${newStatus}`);
-    } catch (err) {
-      console.error("Failed to update status:", err);
     }
   };
 
@@ -126,7 +115,7 @@ export default function DeliveryDetailScreen() {
       Alert.alert(
         "Already Completed",
         "This delivery has already been acknowledged and signed.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
       return;
     }

@@ -2,18 +2,18 @@
 // Reusable hooks for API calls
 
 import { useCallback, useState } from "react";
-import { apiService } from "./api";
+import { apiService, GroupedInvoice } from "./api";
 
 export function useDeliveries() {
-  const [deliveries, setDeliveries] = useState<any>(null);
+  const [deliveries, setDeliveries] = useState<GroupedInvoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDeliveries = useCallback(async (filters: any = {}) => {
+  const fetchDeliveries = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.getGroupedInvoices(filters);
+      const response = await apiService.getInvoicesGrouped();
       setDeliveries(response);
       return response;
     } catch (err) {
@@ -32,7 +32,7 @@ export function useDeliveries() {
 }
 
 export function useDeliveryDetails(customerVisitGroup: string) {
-  const [details, setDetails] = useState<any>(null);
+  const [details, setDetails] = useState<GroupedInvoice | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,30 +54,4 @@ export function useDeliveryDetails(customerVisitGroup: string) {
   }, [customerVisitGroup]);
 
   return { details, loading, error, fetchDetails };
-}
-
-export function useUpdateDeliveryStatus() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const updateStatus = useCallback(
-    async (customerVisitGroup: string, status: "pending" | "delivered") => {
-      try {
-        setLoading(true);
-        setError(null);
-        await apiService.updateDeliveryStatus(customerVisitGroup, status);
-        return true;
-      } catch (err) {
-        const errorMsg =
-          err instanceof Error ? err.message : "Failed to update status";
-        setError(errorMsg);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  return { updateStatus, loading, error };
 }

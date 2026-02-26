@@ -51,7 +51,7 @@ class OfflineService {
 
   // Save failed action for later sync
   async saveOfflineAction(
-    action: Omit<OfflineAction, "id" | "timestamp" | "retryCount">
+    action: Omit<OfflineAction, "id" | "timestamp" | "retryCount">,
   ): Promise<void> {
     try {
       const offlineAction: OfflineAction = {
@@ -66,7 +66,7 @@ class OfflineService {
 
       await AsyncStorage.setItem(
         this.OFFLINE_ACTIONS_KEY,
-        JSON.stringify(existingActions)
+        JSON.stringify(existingActions),
       );
       console.log("Saved offline action:", action.type);
     } catch (error) {
@@ -90,11 +90,11 @@ class OfflineService {
     try {
       const actions = await this.getOfflineActions();
       const filteredActions = actions.filter(
-        (action) => action.id !== actionId
+        (action) => action.id !== actionId,
       );
       await AsyncStorage.setItem(
         this.OFFLINE_ACTIONS_KEY,
-        JSON.stringify(filteredActions)
+        JSON.stringify(filteredActions),
       );
       console.log("Removed offline action:", actionId);
     } catch (error) {
@@ -125,23 +125,7 @@ class OfflineService {
               await apiService.acknowledgeGroup(
                 action.payload.customerVisitGroup,
                 action.payload.signatureData,
-                action.payload.signerName
-              );
-              success = true;
-              break;
-
-            case "update_status":
-              await apiService.updateDeliveryStatus(
-                action.payload.customerVisitGroup,
-                action.payload.status
-              );
-              success = true;
-              break;
-
-            case "submit_signature":
-              await apiService.submitSignature(
-                action.payload.invoiceId,
-                action.payload.signatureData
+                action.payload.signerName,
               );
               success = true;
               break;
@@ -165,7 +149,7 @@ class OfflineService {
           if (action.retryCount > 5) {
             await this.removeOfflineAction(action.id);
             console.log(
-              `Removing action ${action.id} after ${action.retryCount} failed attempts`
+              `Removing action ${action.id} after ${action.retryCount} failed attempts`,
             );
           } else {
             // Update the action with new retry count
@@ -175,7 +159,7 @@ class OfflineService {
               actions[actionIndex] = action;
               await AsyncStorage.setItem(
                 this.OFFLINE_ACTIONS_KEY,
-                JSON.stringify(actions)
+                JSON.stringify(actions),
               );
             }
           }
@@ -200,7 +184,7 @@ class OfflineService {
       };
       await AsyncStorage.setItem(
         this.CACHED_INVOICES_KEY,
-        JSON.stringify(cached)
+        JSON.stringify(cached),
       );
       console.log("Cached invoice details for:", invoiceId);
     } catch (error) {
@@ -225,7 +209,7 @@ class OfflineService {
           delete cached[invoiceId];
           await AsyncStorage.setItem(
             this.CACHED_INVOICES_KEY,
-            JSON.stringify(cached)
+            JSON.stringify(cached),
           );
         }
       }
@@ -252,7 +236,7 @@ class OfflineService {
   async cacheGroupedInvoices(
     groups: any[],
     date?: string,
-    routeNumber?: number
+    routeNumber?: number,
   ): Promise<void> {
     try {
       const key = `${this.CACHED_GROUPS_KEY}_${date || "all"}_${
@@ -274,7 +258,7 @@ class OfflineService {
   // Get cached grouped invoices
   async getCachedGroupedInvoices(
     date?: string,
-    routeNumber?: number
+    routeNumber?: number,
   ): Promise<any[] | null> {
     try {
       const key = `${this.CACHED_GROUPS_KEY}_${date || "all"}_${
@@ -308,7 +292,7 @@ class OfflineService {
       };
       await AsyncStorage.setItem(
         this.CACHED_ROUTES_KEY,
-        JSON.stringify(cacheData)
+        JSON.stringify(cacheData),
       );
       console.log("Cached routes");
     } catch (error) {

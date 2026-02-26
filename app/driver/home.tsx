@@ -45,8 +45,9 @@ const FilterPill = React.memo(
         {label}
       </Text>
     </TouchableOpacity>
-  )
+  ),
 );
+FilterPill.displayName = "FilterPill";
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,7 +64,7 @@ export default function HomeScreen() {
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
   // Use offline hook
-  const { isOnline, syncStatus, manualSync } = useOffline();
+  const { isOnline, syncStatus } = useOffline();
 
   useEffect(() => {
     // Only load on initial mount
@@ -72,6 +73,7 @@ export default function HomeScreen() {
       loadRoutes();
       setHasInitialLoad(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Use focus effect to refresh data only when returning from completed signature
@@ -91,7 +93,8 @@ export default function HomeScreen() {
       };
 
       shouldRefresh();
-    }, [hasInitialLoad, groups.length])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasInitialLoad, groups.length]),
   );
 
   useEffect(() => {
@@ -99,6 +102,7 @@ export default function HomeScreen() {
     if (hasInitialLoad) {
       loadInvoices();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeFilter]);
 
   const loadRoutes = async () => {
@@ -129,7 +133,7 @@ export default function HomeScreen() {
       const date = routeFilter === "all" ? undefined : null; // null means don't filter by date
       const groupedInvoices = await apiService.getInvoicesGrouped(
         date,
-        routeNumber
+        routeNumber,
       );
       setGroups(groupedInvoices);
 
@@ -142,7 +146,7 @@ export default function HomeScreen() {
         apiService.prefetchInvoiceDetails(groupedInvoices).catch((error) => {
           console.warn(
             "📱 Prefetch failed (this won't affect app functionality):",
-            error
+            error,
           );
         });
       }
@@ -174,7 +178,7 @@ export default function HomeScreen() {
       const date = routeFilter === "all" ? undefined : null;
       const groupedInvoices = await apiService.getInvoicesGrouped(
         date,
-        routeNumber
+        routeNumber,
       );
       setGroups(groupedInvoices);
 
@@ -183,7 +187,7 @@ export default function HomeScreen() {
     } catch (err) {
       console.error("Error refreshing invoices:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to refresh invoices"
+        err instanceof Error ? err.message : "Failed to refresh invoices",
       );
     } finally {
       setRefreshing(false);
@@ -521,8 +525,8 @@ export default function HomeScreen() {
               {searchQuery || statusFilter !== "all" || routeFilter !== "all"
                 ? "Try adjusting your search or filters"
                 : routeFilter === "all"
-                ? "No deliveries assigned for today"
-                : "No deliveries found for this route"}
+                  ? "No deliveries assigned for today"
+                  : "No deliveries found for this route"}
             </Text>
           </View>
         )}

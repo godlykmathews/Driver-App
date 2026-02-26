@@ -35,6 +35,7 @@ export default function SignatureScreen() {
     if (!hasLoadedOnce) {
       loadDeliveryDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadDeliveryDetails = async () => {
@@ -77,7 +78,7 @@ export default function SignatureScreen() {
         (group) =>
           group.first_invoice_id?.toString() === id ||
           group.customer_visit_group === id ||
-          group.invoice_numbers.includes(id)
+          group.invoice_numbers.includes(id),
       );
 
       if (foundDelivery) {
@@ -100,7 +101,7 @@ export default function SignatureScreen() {
     } catch (err) {
       console.error("Error loading delivery details:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load delivery details"
+        err instanceof Error ? err.message : "Failed to load delivery details",
       );
     } finally {
       setLoading(false);
@@ -114,7 +115,7 @@ export default function SignatureScreen() {
     if (!signerName.trim()) {
       Alert.alert(
         "Missing Signer Name",
-        "Please enter the full name of the person signing for these invoices."
+        "Please enter the full name of the person signing for these invoices.",
       );
       return;
     }
@@ -123,7 +124,7 @@ export default function SignatureScreen() {
     if (!signature) {
       Alert.alert(
         "Missing Signature",
-        "Please draw your signature in the signature area before submitting."
+        "Please draw your signature in the signature area before submitting.",
       );
       return;
     }
@@ -132,7 +133,7 @@ export default function SignatureScreen() {
     if (signature.length < 100) {
       Alert.alert(
         "Invalid Signature",
-        "Signature appears to be too short. Please draw a proper signature."
+        "Signature appears to be too short. Please draw a proper signature.",
       );
       return;
     }
@@ -150,13 +151,13 @@ export default function SignatureScreen() {
       await apiService.acknowledgeGroup(
         delivery.customer_visit_group,
         signature, // PNG base64 data
-        signerName.trim() // Name of the signer
+        signerName.trim(), // Name of the signer
       );
 
       // Update the delivery status in cache immediately
       deliveryDataService.updateDeliveryStatus(
         delivery.customer_visit_group,
-        "delivered"
+        "delivered",
       );
 
       Alert.alert(
@@ -174,7 +175,7 @@ export default function SignatureScreen() {
               router.replace("/driver/home");
             },
           },
-        ]
+        ],
       );
     } catch (err) {
       console.error("Acknowledgment failed:", err);
@@ -182,7 +183,7 @@ export default function SignatureScreen() {
         "Submission Failed",
         err instanceof Error
           ? err.message
-          : "Failed to submit signature. Please try again."
+          : "Failed to submit signature. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -279,7 +280,7 @@ export default function SignatureScreen() {
         {/* Signer Name Input - Required and Empty by Default */}
         <View style={styles.section}>
           <Text style={styles.label}>
-            Signer's Full Name <Text style={styles.required}>*</Text>
+            {"Signer's Full Name"} <Text style={styles.required}>*</Text>
           </Text>
           <TextInput
             style={styles.input}

@@ -20,6 +20,7 @@ export default function DriverLayout() {
     const authInterval = setInterval(checkAuthentication, 1000);
 
     return () => clearInterval(authInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Redirect based on authentication state
@@ -56,7 +57,11 @@ export default function DriverLayout() {
     return (
       <View style={loadingStyles.container}>
         <Feather name="truck" size={80} color="#0a7ea4" />
-        <ActivityIndicator size="large" color="#0a7ea4" style={loadingStyles.spinner} />
+        <ActivityIndicator
+          size="large"
+          color="#0a7ea4"
+          style={loadingStyles.spinner}
+        />
       </View>
     );
   }
@@ -118,9 +123,9 @@ export default function DriverLayout() {
 const loadingStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
   },
   spinner: {
     marginTop: 20,

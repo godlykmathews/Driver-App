@@ -30,32 +30,6 @@ export interface Invoice {
 }
 
 // Keep existing interfaces for backward compatibility
-export interface CustomerGroupInfo {
-  customer_visit_group: string;
-  customer_name: string;
-  branch?: string;
-  route_display?: string;
-  invoice_count: number;
-  status: "pending" | "delivered";
-  route_number?: number;
-}
-
-export interface RouteInfo {
-  route_number: number;
-  route_name: string;
-}
-
-export interface GroupedInvoicesResponse {
-  groups: CustomerGroupInfo[];
-  total_groups: number;
-  pending_groups: number;
-  delivered_groups: number;
-}
-
-export interface RoutesResponse {
-  routes: RouteInfo[];
-}
-
 export interface DriverRoute {
   route_number: number;
   route_name?: string | null;
@@ -122,7 +96,7 @@ class ApiService {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const token = await this.getToken();
 
@@ -149,7 +123,7 @@ class ApiService {
           } else {
             errorDetails = await response.text();
           }
-        } catch (parseError) {
+        } catch {
           errorDetails = "Unable to parse error response";
         }
 
@@ -163,7 +137,7 @@ class ApiService {
         if (response.status === 400) {
           console.error(`Bad Request (400) for ${endpoint}:`, errorDetails);
           throw new Error(
-            `Bad Request: ${errorDetails || "Invalid request parameters"}`
+            `Bad Request: ${errorDetails || "Invalid request parameters"}`,
           );
         }
 
@@ -174,10 +148,10 @@ class ApiService {
 
         console.error(
           `HTTP ${response.status} error for ${endpoint}:`,
-          errorDetails
+          errorDetails,
         );
         throw new Error(
-          `HTTP error! status: ${response.status} - ${errorDetails}`
+          `HTTP error! status: ${response.status} - ${errorDetails}`,
         );
       }
 
@@ -190,7 +164,7 @@ class ApiService {
 
   async login(
     username: string,
-    password: string
+    password: string,
   ): Promise<{
     token: string;
     user: {
@@ -236,29 +210,9 @@ class ApiService {
     }
   }
 
-  // Fix the getDriverInvoices method to match your backend API
-  async getDriverInvoices(filters?: { status?: string }): Promise<Invoice[]> {
-    const params = new URLSearchParams();
-    if (filters?.status && filters.status !== "all") {
-      params.append("status", filters.status);
-    }
-
-    const url = filters?.status === "pending" ? "invoices/pending" : "invoices";
-    const queryString = params.toString();
-    const endpoint = queryString ? `${url}?${queryString}` : url;
-
-    return this.request<Invoice[]>(endpoint);
-  }
-
-  async getAllInvoicesForToday(): Promise<Invoice[]> {
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split("T")[0];
-    return this.request<Invoice[]>(`invoices-grouped?created_date=${today}`);
-  }
-
   async getInvoicesGrouped(
     date?: string | null,
-    routeNumber?: number
+    routeNumber?: number,
   ): Promise<GroupedInvoice[]> {
     const offline = await getOfflineService();
 
@@ -268,7 +222,7 @@ class ApiService {
       console.log("Device is offline, trying to get cached data...");
       const cachedData = await offline.getCachedGroupedInvoices(
         date,
-        routeNumber
+        routeNumber,
       );
       if (cachedData) {
         return cachedData;
@@ -314,7 +268,7 @@ class ApiService {
       console.log("Online request failed, trying cached data...");
       const cachedData = await offline.getCachedGroupedInvoices(
         date,
-        routeNumber
+        routeNumber,
       );
       if (cachedData) {
         return cachedData;
@@ -374,11 +328,6 @@ class ApiService {
     }
   }
 
-  // update getAllInvoice to call grouped endpoint for compatibility
-  async getAllInvoice(): Promise<GroupedInvoice[]> {
-    return this.getInvoicesGrouped();
-  }
-
   async getInvoiceDetails(invoiceId: string): Promise<Invoice> {
     const offline = await getOfflineService();
 
@@ -391,7 +340,7 @@ class ApiService {
         return cachedDetails;
       }
       throw new Error(
-        "No internet connection and no cached invoice details available"
+        "No internet connection and no cached invoice details available",
       );
     }
 
@@ -413,101 +362,47 @@ class ApiService {
     }
   }
 
-  async updateInvoiceStatus(invoiceId: string, status: string): Promise<void> {
-    return this.request<void>(`invoices/${invoiceId}/status`, {
-      method: "PUT",
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  async submitSignature(
-    invoiceId: string,
-    signatureData: string
-  ): Promise<void> {
-    return this.request<void>("submit-signature", {
-      method: "POST",
-      body: JSON.stringify({
-        invoice_id: invoiceId,
-        signature_data: signatureData,
-      }),
-    });
-  }
-
-  async getDriverStatistics(): Promise<{
-    total_invoices: number;
-    pending_invoices: number;
-    delivered_invoices: number;
-    failed_invoices: number;
-  }> {
-    return this.request("/statistics");
-  }
-
-  // Keep existing methods for backward compatibility
-  async getGroupedInvoices(
-    filters: {
-      search?: string;
-      status?: "pending" | "delivered";
-      route_number?: number;
-      created_date?: string;
-    } = {}
-  ): Promise<GroupedInvoicesResponse> {
-    const params = new URLSearchParams();
-
-    if (filters.search) params.append("search", filters.search);
-    if (filters.status) params.append("status", filters.status);
-    if (filters.route_number)
-      params.append("route_number", filters.route_number.toString());
-    if (filters.created_date)
-      params.append("created_date", filters.created_date);
-
-    const queryString = params.toString();
-    const endpoint = `/driver/grouped-invoices${
-      queryString ? `?${queryString}` : ""
-    }`;
-
-    return this.request<GroupedInvoicesResponse>(endpoint);
-  }
-
-  async updateDeliveryStatus(
-    customerVisitGroup: string,
-    status: "pending" | "delivered"
-  ): Promise<void> {
-    return this.request<void>(`/driver/delivery-status`, {
-      method: "PUT",
-      body: JSON.stringify({
-        customer_visit_group: customerVisitGroup,
-        status,
-      }),
-    });
-  }
-
-  async getDeliveryDetails(customerVisitGroup: string): Promise<{
-    customer_visit_group: string;
-    customer_name: string;
-    branch?: string;
-    address?: string;
-    phone?: string;
-    route_display?: string;
-    status: "pending" | "delivered";
-    invoices: Array<{
-      invoice_number: string;
+  async getDeliveryDetails(groupId: string): Promise<GroupedInvoice> {
+    const res = await this.request<{
+      customer_visit_group: string;
+      customer_name: string;
+      route_number: number;
+      route_name: string;
+      route_display: string;
+      invoices: {
+        invoice_id: number;
+        n_inv_no: string;
+        amount: number;
+        status: string;
+        cust_name?: string;
+        shop_address?: string;
+      }[];
       total_amount: number;
-      items: Array<{
-        item_name: string;
-        quantity: number;
-        unit_price: number;
-      }>;
-    }>;
-  }> {
-    return this.request(
-      `/driver/delivery-details/${encodeURIComponent(customerVisitGroup)}`
-    );
+      invoice_count: number;
+      all_acknowledged: boolean;
+      branch: string;
+    }>(`customer-group/${encodeURIComponent(groupId)}`);
+
+    return {
+      customer_visit_group: res.customer_visit_group,
+      customer_name: res.customer_name,
+      shop_address: res.invoices[0]?.shop_address ?? null,
+      route_number: res.route_number,
+      route_name: res.route_name,
+      route_display: res.route_display,
+      invoice_count: res.invoice_count,
+      total_amount: res.total_amount,
+      status: res.all_acknowledged ? "delivered" : "pending",
+      first_invoice_id: res.invoices[0]?.invoice_id,
+      invoice_numbers: res.invoices.map((inv) => inv.n_inv_no),
+      branch: res.branch,
+    };
   }
 
   async acknowledgeGroup(
     customerVisitGroup: string,
     signatureData: string,
-    signerName: string
+    signerName: string,
   ): Promise<void> {
     // Validate inputs before sending
     if (!customerVisitGroup) {
@@ -537,7 +432,7 @@ class ApiService {
         },
       });
       throw new Error(
-        "No internet connection. Acknowledgment saved for later sync."
+        "No internet connection. Acknowledgment saved for later sync.",
       );
     }
 
@@ -565,7 +460,7 @@ class ApiService {
 
       const response = await fetch(
         `${this.baseURL}acknowledge-group/${encodeURIComponent(
-          customerVisitGroup
+          customerVisitGroup,
         )}`,
         {
           method: "POST",
@@ -574,7 +469,7 @@ class ApiService {
             // Don't set Content-Type for multipart/form-data - let React Native handle it
           },
           body: formData,
-        }
+        },
       );
 
       console.log(`Acknowledgment response status: ${response.status}`);
@@ -601,15 +496,15 @@ class ApiService {
             typeof errorData === "object" && errorData.detail
               ? `Validation error: ${JSON.stringify(errorData.detail)}`
               : typeof errorData === "string"
-              ? errorData
-              : `Validation error: ${JSON.stringify(errorData)}`;
+                ? errorData
+                : `Validation error: ${JSON.stringify(errorData)}`;
           throw new Error(errorMessage);
         }
 
         throw new Error(
           `HTTP error! status: ${response.status}, details: ${JSON.stringify(
-            errorData
-          )}`
+            errorData,
+          )}`,
         );
       }
 
@@ -626,7 +521,7 @@ class ApiService {
           error.message.includes("ERR_NETWORK"))
       ) {
         console.log(
-          "Network error detected, saving acknowledgment for later sync..."
+          "Network error detected, saving acknowledgment for later sync...",
         );
         await offline.saveOfflineAction({
           type: "acknowledge_group",
@@ -703,7 +598,7 @@ class ApiService {
     console.log(
       `🚀 Prefetching details for ${
         uniqueInvoiceIds.length
-      } valid invoice IDs: [${uniqueInvoiceIds.join(", ")}]`
+      } valid invoice IDs: [${uniqueInvoiceIds.join(", ")}]`,
     );
 
     // Prefetch in batches to avoid overwhelming the server
@@ -724,7 +619,7 @@ class ApiService {
             // Fetch and cache invoice details using numeric ID
             console.log(`🔄 Fetching invoice details for ID: ${invoiceId}`);
             const details = await this.request<Invoice>(
-              `invoices/${invoiceId}`
+              `invoices/${invoiceId}`,
             );
             await offline.cacheInvoiceDetails(invoiceId, details);
             console.log(`✅ Prefetched and cached invoice ${invoiceId}`);
@@ -732,7 +627,7 @@ class ApiService {
             // Log warning but don't break the prefetch process
             console.warn(`⚠️ Failed to prefetch invoice ${invoiceId}:`, error);
           }
-        })
+        }),
       );
 
       // Longer delay between batches to be nice to the server
