@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Dlive-App",
-    "slug": "dlive-mobile",
+    "slug": "dliveapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -45,9 +45,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c454b5c0-4d2e-46a5-aaf0-dcb8573743be"
+        "projectId": "3564d703-c16b-4385-9ff9-067261c4a04a"
       }
     },
-    "owner": "godlykmathews_thinkvyne.in"
+    "owner": "godlykmwork"
   }
 }
